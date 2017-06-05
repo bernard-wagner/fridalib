@@ -26,8 +26,8 @@ module.exports = function(){
             FridaLib.Android.Common.Application.getApplicationContext().sendBroadcast($intent);
         },
 
-        registerReceiver: function($receiver,$intentfilter){
-            FridaLib.Android.Common.Application.getApplicationContext().registerReceiver($receiver,$intentfilter);
+        registerReceiver: function($receiver,$intentfilter,broadcastPermission){
+            FridaLib.Android.Common.Application.getApplicationContext().registerReceiver($receiver,$intentfilter,broadcastPermission || null,null);
         },
 
         unregisterReceiver: function($receiver){
@@ -108,28 +108,37 @@ module.exports = function(){
             var $receiver = FridaLib.receivers[index];
             FridaLib.Android.Common.Context.unregisterReceiver($receiver);
         },
-        registerReceiver: function(filter){
+        registerReceiver: function(filter,onReceiveCallback){
             var $filter = FridaLib.Android.Common.Intent.buildIntentFilter(filter);
-            var BrickReceiver = Java.use("com.android.server.BrickReceiver");
-            var $receiver = BrickReceiver.$new();
+            var TemplateReceiver = Java.use("android.appwidget.AppWidgetProvider");
+            var $receiver = TemplateReceiver.$new();
 
-            BrickReceiver.onReceive.implementation = function(context,intent){
-                this.onReceive(context,intent);
+            TemplateReceiver.onReceive.implementation = function(context,intent){                
+                onReceiveCallback();
             }
             
             FridaLib.Android.Common.Context.registerReceiver($receiver,$filter);
             FridaLib.receivers = (FridaLib.receivers || []).concat([$receiver]);
+            return FridaLib.receivers.length-1;
         },
 
         monitorBroadcastReceivers: function(){
-            var ContextWrapper = Java.use("android.app.ContextImpl");
-
-            ContextWrapper.registerReceiver.overload("android.content.BroadcastReceiver", "android.content.IntentFilter").implementation = function(receiver, filter) {
-                return this.registerReceiver(receiver,filter);
-            };
+            var ContextWrapper = Java.use("android.app.ContextImpl");     
+            var StringWriter = Java.use("java.io.StringWriter");
+            var Xml = Java.use("android.util.Xml"); 
             
-            ContextWrapper.registerReceiverInternal.overload("android.content.BroadcastReceiver", "android.content.IntentFilter", "java.lang.String", "android.os.Handler","android.content.Context").implementation = function(receiver, filter, broadcastPermission, scheduler, context) {
-                return this.registerReceiver(receiver, filter, broadcastPermission, scheduler, context);
+            ContextWrapper.registerReceiverInternal.overload("android.content.BroadcastReceiver", "int", "android.content.IntentFilter", "java.lang.String", "android.os.Handler","android.content.Context").implementation = function(receiver, userid, filter, broadcastPermission, scheduler, context) {               
+                var serializer = Xml.newSerializer();
+                var writer = StringWriter.$new();                
+                serializer.setOutput(writer);
+                serializer.startTag(null,"receiver");
+                broadcastPermission ? serializer.attribute(null, "permission", broadcastPermission) : null;
+                filter.writeToXml(serializer);      
+                serializer.endTag(null,"receiver");        
+                serializer.endDocument();            
+                console.log("registerReceiver: " 
+                            + writer.toString());
+                return this.registerReceiverInternal(receiver, userid, filter, broadcastPermission, scheduler, context);
             };   
         }
     }

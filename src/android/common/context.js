@@ -13,8 +13,8 @@ module.exports = function(){
             FridaLib.Android.Common.Application.getApplicationContext().sendBroadcast($intent);
         },
 
-        registerReceiver: function($receiver,$intentfilter){
-            FridaLib.Android.Common.Application.getApplicationContext().registerReceiver($receiver,$intentfilter);
+        registerReceiver: function($receiver,$intentfilter,broadcastPermission){
+            FridaLib.Android.Common.Application.getApplicationContext().registerReceiver($receiver,$intentfilter,broadcastPermission || null,null);
         },
 
         unregisterReceiver: function($receiver){

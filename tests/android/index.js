@@ -29,32 +29,15 @@ module.exports = function(){
 
     }
 
-    var testButton = function(){
-          Java.perform(function(){
-             var MainActivity = Java.use("com.mwrlabs.test.MainActivity");
-
-             MainActivity.btnClicked.overload("android.view.View").implementation = function(view){
-                 console.log("Button clicked");
-                 this.btnClicked(view);
-             }
-          })
-    }
-
     var monitorAndRegisterBroadcast = function(){
          Java.perform(function(){
               FridaLib.Android.Module.IPC.monitorBroadcastReceivers();
-              FridaLib.Android.Module.IPC.registerReceiver({action: "pew.pew.pew2"});
+              var index = FridaLib.Android.Module.IPC.registerReceiver({action: "pew.pew.pew2"}, function(){console.log("Success!")});
               FridaLib.Android.Module.IPC.sendBroadcast({action: "pew.pew.pew2"});
-              FridaLib.Android.Module.IPC.unregisterReceiver(0);
+              FridaLib.Android.Module.IPC.unregisterReceiver(index);
           })
     }
 
-    var quick = function(){
-        Java.perform(function(){
-              var LoadedApk = Java.use("android.app.LoadedApk");
-              console.log(LoadedApk.mReceivers);
-          })
-    }
 
     var runTests = function(){
         startActivity();
