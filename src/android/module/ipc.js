@@ -17,8 +17,13 @@ module.exports = function(){
             var TemplateReceiver = Java.use("android.appwidget.AppWidgetProvider");
             var $receiver = TemplateReceiver.$new();
 
-            TemplateReceiver.onReceive.implementation = function(context,intent){                
-                onReceiveCallback();
+            TemplateReceiver.onReceive.implementation = function(context,intent){
+                var atomic = this;
+                if (FridaLib.receivers.filter(function(obj){return obj.toString() === atomic.toString();}).length > 0){        
+                    onReceiveCallback();
+                } else {                    
+                    this.onReceive(context,intent);
+                }                       
             }
             
             FridaLib.Android.Common.Context.registerReceiver($receiver,$filter);
@@ -36,12 +41,14 @@ module.exports = function(){
                 var writer = StringWriter.$new();                
                 serializer.setOutput(writer);
                 serializer.startTag(null,"receiver");
+                serializer.startTag(null,"intent-filter");
                 broadcastPermission ? serializer.attribute(null, "permission", broadcastPermission) : null;
                 filter.writeToXml(serializer);      
+                serializer.endTag(null,"intent-filter");
                 serializer.endTag(null,"receiver");        
                 serializer.endDocument();            
-                console.log("registerReceiver: " 
-                            + writer.toString());
+                console.log("registerReceiver: \n" 
+                            + FridaLib.utils.formatXml(writer.toString()));
                 return this.registerReceiverInternal(receiver, userid, filter, broadcastPermission, scheduler, context);
             };   
         }

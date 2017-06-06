@@ -38,6 +38,19 @@ module.exports = function(){
           })
     }
 
+    var dumpRegisteredReceivers = function(){
+        var result = {}
+        Java.perform(function(){
+            var ArrayMap = Java.use("android.util.ArrayMap");
+            var mReceivers = FridaLib.Android.Common.Application.getApplicationContext().mLoadedApk['value'].mReceivers['value'];
+            var BroadcastReceivers = [];
+            console.log(mReceivers)
+            result = mReceivers.values().toArray()[0];
+            result = Java.cast(result,ArrayMap).keySet().toArray();
+            console.log(result);
+        
+        })
+    }
 
     var runTests = function(){
         startActivity();
