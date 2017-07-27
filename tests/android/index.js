@@ -31,10 +31,17 @@ module.exports = function(){
 
     var monitorAndRegisterBroadcast = function(){
          Java.perform(function(){
-              FridaLib.Android.Module.IPC.monitorBroadcastReceivers();
+              FridaLib.Android.Module.IPC.monitorBroadcastReceivers(function(receiver,context,intent){
+                  console.log("onReceive intercepted:" + receiver)
+                  return receiver.onReceive(context,intent);
+              });
               var index = FridaLib.Android.Module.IPC.registerReceiver({action: "pew.pew.pew2"}, function(){console.log("Success!")});
               FridaLib.Android.Module.IPC.sendBroadcast({action: "pew.pew.pew2"});
-              FridaLib.Android.Module.IPC.unregisterReceiver(index);
+              FridaLib.Android.Module.IPC.discoverReceivers(function(receiver,context,intent){
+                    console.log("onReceive intercepted:" + receiver)
+                    return receiver.onReceive(context,intent);                
+              });
+              //FridaLib.Android.Module.IPC.unregisterReceiver(index);
           })
     }
 

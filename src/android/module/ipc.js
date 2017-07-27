@@ -20,7 +20,7 @@ module.exports = function(){
             TemplateReceiver.onReceive.implementation = function(context,intent){
                 var atomic = this;
                 if (FridaLib.receivers.filter(function(obj){return obj.toString() === atomic.toString();}).length > 0){        
-                    onReceiveCallback();
+                    onReceiveCallback(receiver,context,intent);
                 } else {                    
                     this.onReceive(context,intent);
                 }                       
@@ -31,7 +31,7 @@ module.exports = function(){
             return FridaLib.receivers.length-1;
         },
 
-        monitorBroadcastReceivers: function(){
+        monitorBroadcastReceivers: function(onReceiveCallback){
             var ContextWrapper = Java.use("android.app.ContextImpl");     
             var StringWriter = Java.use("java.io.StringWriter");
             var Xml = Java.use("android.util.Xml"); 
@@ -48,9 +48,39 @@ module.exports = function(){
                 serializer.endTag(null,"receiver");        
                 serializer.endDocument();            
                 console.log("registerReceiver: \n" 
-                            + FridaLib.utils.formatXml(writer.toString()));
+                            + writer.toString());
+                if (typeof onReceiveCallback === 'function'){
+                    clazz = Java.use(receiver.$className);
+                    clazz.onReceive.implementation = function(context,intent){
+                        return onReceiveCallback(this,context,intent);
+                    };
+                }
+               
+
                 return this.registerReceiverInternal(receiver, userid, filter, broadcastPermission, scheduler, context);
             };   
+        },
+
+        discoverReceivers : function(onReceiveCallback){
+            var BroadcastReceiver = Java.use("android.content.BroadcastReceiver")
+            var classes = Java.enumerateLoadedClassesSync();
+            for (var index in classes){
+                if (classes[index].startsWith("android") || classes[index].startsWith("java") || classes[index].startsWith("com.android")) continue;
+                try {
+                    var clazz = Java.use(classes[index]);
+                    if (BroadcastReceiver.class.isAssignableFrom(clazz.class)){
+                        console.log(classes[index]);
+                        if (typeof onReceiveCallback === 'function'){
+                            clazz.onReceive.implementation = function(context,intent){
+                                return onReceiveCallback(this,context,intent);
+                            };
+                        }
+                    }
+                    clazz.$dispose();
+                } catch (e) {
+
+                }   
+            }
         }
     }
 }()
